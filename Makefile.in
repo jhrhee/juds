@@ -18,6 +18,7 @@ INCLUDEPATH = -I $(JAVA_HOME)/include -I $(JAVA_HOME)/include/$(PLATFORM)
 
 LIB32=$(NATIVELIB)-$(PLATFORM)-i386.$(LIBEXT)
 LIB64=$(NATIVELIB)-$(PLATFORM)-x86_64.$(LIBEXT)
+LIBARM=$(NATIVELIB)-$(PLATFORM)-arm.$(LIBEXT)
 M32=@M32@
 M64=@M64@
 JARFILE=juds-$(VERSION).jar
@@ -41,11 +42,14 @@ package: universal
 	rm -rf juds-$(VERSION)-universal
 
 juds-$(VERSION).jar: $(PACKAGE_DIR)/UnixDomainSocket.class $(PACKAGE_DIR)/UnixDomainSocketClient.class $(PACKAGE_DIR)/UnixDomainSocketServer.class nativelib $(PACKAGE_DIR)/JUDS.class
-	$(JAR) cf $@ $(PACKAGE_DIR)/*.class $(LIB64) $(LIB32)
+	$(JAR) cf $@ $(PACKAGE_DIR)/*.class $(LIB64) $(LIB32) $(LIBARM)
 
 nativelib: $(PACKAGE_DIR)/UnixDomainSocket.c $(PACKAGE_DIR)/UnixDomainSocket.h
-	$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) $(M32) -o $(LIB32) $< 
-	$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) $(M64) -o $(LIB64) $< 
+	#$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) $(M32) -o $(LIB32) $< 
+	#$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) $(M64) -o $(LIB64) $< 
+	$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) -o $(LIB32) $< 
+	$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) -o $(LIB64) $< 
+	$(CC) $(CFLAGS) -fPIC $(INCLUDEPATH) -o $(LIBARM) $< 
 
 $(PACKAGE_DIR)/UnixDomainSocket.h: $(PACKAGE).UnixDomainSocket
 	$(JAVAH) -o $@ $<
@@ -65,10 +69,10 @@ $(PACKAGE_DIR)/UnixDomainSocketServer.class: $(PACKAGE_DIR)/UnixDomainSocketServ
 	$(JAVAC) $(JAVA_FLAGS) $?
 
 install: nativelib
-	cp $(LIB32) $(LIB64) $(PREFIX)/lib
+	cp $(LIB32) $(LIB64) $(LIBARM) $(PREFIX)/lib
 
 uninstall:
-	rm -f $(PREFIX)/lib/$(LIB32) $(PREFIX)/lib/$(LIB64)
+	rm -f $(PREFIX)/lib/$(LIB32) $(PREFIX)/lib/$(LIB64) $(PREFIX)/lib/$(LIBARM)
 
 test: test/TestUnixDomainSocket.class test/TestUnixDomainSocketServer.class
 	python test/TestUnixDomainSocket.py $(TEST_SOCKET_FILE) &
